@@ -24,9 +24,9 @@ let data_retention_in_days = 365; // B5
 
 // calculated values
 const data_load_service = "Snowpipe"; // B9, "Snowpipe" here is hard coded(according to Google sheet), but can be collected from input if needed.
-const data_credits_per_year = get_credits_per_year(data_ingestion_per_day, data_load_service); // B9,
-const [warehouse_size, warehouse_credits_per_year] = get_warehouse_data(data_ingestion_per_day); // [A11, B11]
-const storage_size_on_disk_TB = ((data_ingestion_per_day * data_retention_in_days) / 1024) * (1 - COMPRESSION_RATE); // A13, =((A5*B5)/1024)*(1-Lookups!B17)
+let data_credits_per_year = 122640; // B9,
+let [warehouse_size, warehouse_credits_per_year] = ["M", 46720]; // [A11, B11]
+let storage_size_on_disk_TB = 0; // A13, =((A5*B5)/1024)*(1-Lookups!B17)
 let total_compute = 0; // B18
 let total_storage = 0; // B19
 let anvilogic_cost = 0; // B20
@@ -57,6 +57,9 @@ const $azureSentinelSavings = document.getElementById("azure_sentinel_savings") 
  */
 function calculate_totals() {
   // recalculate the values
+  data_credits_per_year = get_credits_per_year(data_ingestion_per_day, data_load_service);
+  warehouse_credits_per_year = get_warehouse_data(data_ingestion_per_day)[1]; // [size, value] : get value from returned arr
+  storage_size_on_disk_TB = ((data_ingestion_per_day * data_retention_in_days) / 1024) * (1 - COMPRESSION_RATE);
   total_compute = formattedNumber(credit_price * (warehouse_credits_per_year + data_credits_per_year));
   total_storage = get_total_storage(hosted_region, storage_size_on_disk_TB);
   anvilogic_cost = formattedNumber(total_compute + total_storage); // =sum(B18+B19)
@@ -86,8 +89,8 @@ function calculate_totals() {
     console.error("All necessary DOM elements not found");
   }
 
-  // console.log(data_ingestion_per_day, data_retention_in_days);
   console.log("---------------------------------------------------------");
+  console.log("storage_size_on_disk_TB", storage_size_on_disk_TB);
   console.log("Total compute: ", total_compute);
   console.log("Total storage: ", total_storage);
   console.log("Anvilogic cost: ", anvilogic_cost);
