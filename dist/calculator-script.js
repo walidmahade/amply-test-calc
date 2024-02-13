@@ -579,18 +579,147 @@ function hmrAccept(bundle /*: ParcelRequire */ , id /*: string */ ) {
 }
 
 },{}],"gYdTW":[function(require,module,exports) {
-var _helpers = require("./helpers");
-const managedInstance = true;
-(0, _helpers.greet)("Calculator");
-console.log("Calculator script loaded ", managedInstance);
+var _helpersFunctions = require("./helpers-functions");
+var _lookups = require("./lookups");
+console.log("Calculator script loaded ");
+/**
+ * fixed values based on notion doc instructions
+ * comment includes the cell reference from Google sheet
+ */ const managed_instance = true; // B6
+const hosted_region = "us"; // B16
+const credit_price = 3; // B17
+const margin = 0.3; // B22 -> 30%
+// user input values
+let data_ingestion_per_day = 7000; // A5
+let data_retention_in_days = 365; // B5
+// calculated values
+const data_load_service = "Snowpipe"; // B9, "Snowpipe" here is hard coded(according to Google sheet), but can be collected from input if needed.
+const data_credits_per_year = (0, _lookups.get_credits_per_year)(data_ingestion_per_day, data_load_service); // B9,
+const [warehouse_size, warehouse_credits_per_year] = (0, _lookups.get_warehouse_data)(data_ingestion_per_day); // [A11, B11]
+const storage_size_on_disk_TB = data_ingestion_per_day * data_retention_in_days / 1024 * (1 - (0, _lookups.COMPRESSION_RATE)); // A13, =((A5*B5)/1024)*(1-Lookups!B17)
+let total_compute = 0; // B18
+let total_storage = 0; // B19
+let anvilogic_cost = 0; // B20
+let anvilogic_profit = 0; // B21
+let customer_estimate = 0; // B23
+/**
+ * ------------------------------------------
+ * Calculations
+ */ function calculate_totals() {
+    total_compute = (0, _helpersFunctions.formattedNumber)(credit_price * (warehouse_credits_per_year + data_credits_per_year));
+    total_storage = (0, _lookups.get_total_storage)(hosted_region, storage_size_on_disk_TB);
+    anvilogic_cost = (0, _helpersFunctions.formattedNumber)(total_compute + total_storage); // =sum(B18+B19)
+    anvilogic_profit = (0, _helpersFunctions.formattedNumber)(managed_instance ? total_compute * margin : 0); // =IF(B6=FALSE(), 0, B18*B22)
+    customer_estimate = anvilogic_cost + anvilogic_profit; // =sum(B20+B21)
+    // console.log(data_ingestion_per_day, data_retention_in_days);
+    console.log("---------------------------------------------------------");
+    console.log("Total compute: ", total_compute);
+    console.log("Total storage: ", total_storage);
+    console.log("Anvilogic cost: ", anvilogic_cost);
+    console.log("Anvilogic profit: ", anvilogic_profit);
+    console.log("Customer estimate: ", customer_estimate);
+}
+/**
+ * ------------------------------------------
+ * Event listeners
+ */ // Get the input element
+const dataSizeInput = document.getElementById("Data-size");
+const dataRetentionDaysInput = document.getElementById("Number-of-days");
+// handle the input change event
+function handleInputChange(event) {
+    const inputElement = event.target;
+    if (inputElement.id === "Data-size") data_ingestion_per_day = parseInt(inputElement.value);
+    else data_retention_in_days = parseInt(inputElement.value);
+    // recalculate the values
+    calculate_totals();
+}
+// Attach the event listener to the input element (can be optimized using debounce)
+dataSizeInput.addEventListener("input", handleInputChange);
+dataRetentionDaysInput.addEventListener("input", handleInputChange);
+/**
+ * ------------------------------------------
+ * on load, set the initial values
+ * and calculate the totals
+ */ document.addEventListener("DOMContentLoaded", function() {
+    dataSizeInput.value = data_ingestion_per_day.toString();
+    dataRetentionDaysInput.value = data_retention_in_days.toString();
+    calculate_totals();
+}); // --- END onload ---
 
-},{"./helpers":"adjmJ"}],"adjmJ":[function(require,module,exports) {
+},{"./lookups":"6U6f9","./helpers-functions":"IAx4b"}],"6U6f9":[function(require,module,exports) {
 var parcelHelpers = require("@parcel/transformer-js/src/esmodule-helpers.js");
 parcelHelpers.defineInteropFlag(exports);
-parcelHelpers.export(exports, "greet", ()=>greet);
-const greet = (name)=>{
-    return `Hello, ${name}!`;
+parcelHelpers.export(exports, "COMPRESSION_RATE", ()=>COMPRESSION_RATE);
+parcelHelpers.export(exports, "MANAGED_COST", ()=>MANAGED_COST);
+parcelHelpers.export(exports, "STORAGE_COST", ()=>STORAGE_COST);
+parcelHelpers.export(exports, "COMPUTE_COST", ()=>COMPUTE_COST);
+parcelHelpers.export(exports, "DATA_LOAD_SERVICE", ()=>DATA_LOAD_SERVICE);
+parcelHelpers.export(exports, "get_credits_per_year", ()=>get_credits_per_year);
+parcelHelpers.export(exports, "get_warehouse_data", ()=>get_warehouse_data);
+parcelHelpers.export(exports, "get_total_storage", ()=>get_total_storage);
+const COMPRESSION_RATE = 0.9; // B17
+const MANAGED_COST = 0.3; // B19
+// Storage Loc	Cost / TB
+const STORAGE_COST = {
+    "us-east": 24,
+    "eu-central": 24.5,
+    "ap-southeast": 25
 };
+// Compute Loc	Cost / Credit
+const COMPUTE_COST = {
+    "us-east": 3,
+    "eu-central": 3.9,
+    "ap-southeast": 3.7
+};
+/**
+ * --------------------------------------
+ * data load service / credits per year
+ */ const DATA_LOAD_SERVICE = {
+    Snowpipe: 2190,
+    Snowpipe_ADJ: 29200
+};
+function get_credits_per_year(data_ingestion_per_day, data_load_service) {
+    // =((A5/100/1.25)*Lookups!B12)
+    return data_ingestion_per_day / 100 / 1.25 * DATA_LOAD_SERVICE[data_load_service];
+}
+/**
+ * --------------------------------------
+ * warehouse size / credits per year
+ */ const WAREHOUSE_SIZE = {
+    XS: 11680,
+    S: 23360,
+    M: 46720,
+    L: 93440,
+    XL: 186880,
+    "2XL": 373760,
+    "3XL": 747520,
+    "4XL": 1495040
+};
+function get_warehouse_data(data_ingestion_per_day) {
+    //=IF(ISBETWEEN(A5,0,2000,TRUE,TRUE),"XS", IF(ISBETWEEN(A5,2000,5000,FALSE,TRUE), "S", IF(ISBETWEEN(A5,5000,12500,FALSE,TRUE), "M", IF(ISBETWEEN(A5,12500,25000,FALSE,TRUE), "L", IF(ISBETWEEN(A5,25000,50000,FALSE,TRUE))))))
+    let size;
+    if (data_ingestion_per_day <= 2000) size = "XS";
+    else if (data_ingestion_per_day <= 5000) size = "S";
+    else if (data_ingestion_per_day <= 12500) size = "M";
+    else if (data_ingestion_per_day <= 25000) size = "L";
+    else if (data_ingestion_per_day <= 50000) size = "XL";
+    else if (data_ingestion_per_day <= 100000) size = "2XL";
+    else if (data_ingestion_per_day <= 200000) size = "3XL";
+    else size = "4XL";
+    return [
+        size,
+        WAREHOUSE_SIZE[size]
+    ];
+}
+function get_total_storage(hosted_region, storage_size_on_disk_TB) {
+    // location is fixed to "us" -> ("us-east") for now ( according to notion doc)
+    // =IF(B16="US", IF(A13*Lookups!E15*12 < 24, "24", A13*Lookups!E15*12)/1,IF(B16="EU", IF(A13*Lookups!E16*12 < 24.5, "24.5", A13*Lookups!E16*12)/1, IF(B16="AP", IF(A13*Lookups!E17*12 < 24.5, "24.5", A13*Lookups!E17*12)/1)))
+    if (hosted_region === "us") {
+        // IF(A13*Lookups!E15*12 < 24, "24", A13*Lookups!E15*12)/1
+        const result = storage_size_on_disk_TB * STORAGE_COST["us-east"] * 12 < 24 ? 24 : storage_size_on_disk_TB * STORAGE_COST["us-east"] * 12;
+        return Math.ceil(result * 100) / 100;
+    }
+}
 
 },{"@parcel/transformer-js/src/esmodule-helpers.js":"b3YDz"}],"b3YDz":[function(require,module,exports) {
 exports.interopDefault = function(a) {
@@ -622,6 +751,14 @@ exports.export = function(dest, destName, get) {
     });
 };
 
-},{}]},["iUHqi","gYdTW"], "gYdTW", "parcelRequire88a3")
+},{}],"IAx4b":[function(require,module,exports) {
+var parcelHelpers = require("@parcel/transformer-js/src/esmodule-helpers.js");
+parcelHelpers.defineInteropFlag(exports);
+parcelHelpers.export(exports, "formattedNumber", ()=>formattedNumber);
+function formattedNumber(value) {
+    return Math.ceil(value * 100) / 100;
+}
+
+},{"@parcel/transformer-js/src/esmodule-helpers.js":"b3YDz"}]},["iUHqi","gYdTW"], "gYdTW", "parcelRequire88a3")
 
 //# sourceMappingURL=calculator-script.js.map
