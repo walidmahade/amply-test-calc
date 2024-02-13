@@ -3,7 +3,7 @@
 1. Add local script using a localhost link
 
 ```html
-<script src="http://localhost:1234/dist/calculator-script.js"></script>
+<script src="http://localhost:1234/calculator-script.js"></script>
 ```
 
 2. Add the following HTML to the page as backup when localhost is not available
