@@ -1,0 +1,16 @@
+{
+  "name": "ampli-test-calc",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "dev": "parcel src/calculator-script.ts --hmr-port 50619"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "devDependencies": {
+    "parcel": "^2.11.0",
+    "prettier": "3.2.5"
+  }
+}
