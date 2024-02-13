@@ -617,6 +617,11 @@ const $anvilogicCost = document.getElementById("anvilogic_cost");
     anvilogic_profit = (0, _helpersFunctions.formattedNumber)(managed_instance ? total_compute * margin : 0); // =IF(B6=FALSE(), 0, B18*B22)
     customer_estimate = anvilogic_cost + anvilogic_profit; // =sum(B20+B21)
     // update DOM elements
+    if ($totalCompute && $totalStorage && $anvilogicCost) {
+        $totalCompute.textContent = (0, _helpersFunctions.numberToPrice)(total_compute);
+        $totalStorage.textContent = (0, _helpersFunctions.numberToPrice)(total_storage);
+        $anvilogicCost.textContent = (0, _helpersFunctions.numberToPrice)(anvilogic_cost);
+    } else console.error("All necessary DOM elements not found");
     // console.log(data_ingestion_per_day, data_retention_in_days);
     console.log("---------------------------------------------------------");
     console.log("Total compute: ", total_compute);
@@ -761,8 +766,16 @@ exports.export = function(dest, destName, get) {
 var parcelHelpers = require("@parcel/transformer-js/src/esmodule-helpers.js");
 parcelHelpers.defineInteropFlag(exports);
 parcelHelpers.export(exports, "formattedNumber", ()=>formattedNumber);
+parcelHelpers.export(exports, "numberToPrice", ()=>numberToPrice);
 function formattedNumber(value) {
     return Math.ceil(value * 100) / 100;
+}
+function numberToPrice(value) {
+    // format: $91,980.00
+    return value.toLocaleString("en-US", {
+        style: "currency",
+        currency: "USD"
+    });
 }
 
 },{"@parcel/transformer-js/src/esmodule-helpers.js":"b3YDz"}]},["iUHqi","gYdTW"], "gYdTW", "parcelRequire88a3")

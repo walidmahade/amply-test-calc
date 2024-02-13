@@ -1,4 +1,4 @@
-import { formattedNumber } from "./helpers-functions";
+import { formattedNumber, numberToPrice } from "./helpers-functions";
 import { COMPRESSION_RATE, get_credits_per_year, get_total_storage, get_warehouse_data } from "./lookups";
 
 console.log("Calculator script loaded ");
@@ -45,6 +45,13 @@ function calculate_totals() {
   customer_estimate = anvilogic_cost + anvilogic_profit; // =sum(B20+B21)
 
   // update DOM elements
+  if ($totalCompute && $totalStorage && $anvilogicCost) {
+    $totalCompute.textContent = numberToPrice(total_compute);
+    $totalStorage.textContent = numberToPrice(total_storage);
+    $anvilogicCost.textContent = numberToPrice(anvilogic_cost);
+  } else {
+    console.error("All necessary DOM elements not found");
+  }
 
   // console.log(data_ingestion_per_day, data_retention_in_days);
   console.log("---------------------------------------------------------");
