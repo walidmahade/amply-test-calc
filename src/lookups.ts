@@ -109,34 +109,19 @@ function get_compared_costs(data: number) {
     splunk_cloud_val: 0,
     azure_val: 0,
   };
-  /*
-  =IF(
-    A5<Lookups!A27,A5*Lookups!B26,
-    IF(
-      A5<Lookups!A28,A5*Lookups!B27,
-      IF(
-        A5<Lookups!A29,A5*Lookups!B28,IF(
-          A5<Lookups!A30,A5*Lookups!B29,
-          IF(
-            A5<Lookups!A31,A5*Lookups!B30,
-            IF(
-              A5<Lookups!A32,A5*Lookups!B31,A5*Lookups!B32
-            )
-          )
-        )
-      )
-    )
-  )
-   */
+
+  /*formula = IF( A5<Lookups!A27,A5*Lookups!B26, IF( A5<Lookups!A28,A5*Lookups!B27, IF( A5<Lookups!A29,A5*Lookups!B28,IF( A5<Lookups!A30,A5*Lookups!B29, IF( A5<Lookups!A31,A5*Lookups!B30, IF( A5<Lookups!A32,A5*Lookups!B31,A5*Lookups!B32 ) ) ) ) ) )*/
   COMPARED_COSTS.every(([gb_per_year, splunk, splunk_cloud, azure]) => {
+    console.log(data, gb_per_year, splunk, splunk_cloud, azure);
     if (data <= gb_per_year) {
       result = {
         splunk_val: formattedNumber(data * splunk),
         splunk_cloud_val: formattedNumber(data * splunk_cloud),
         azure_val: formattedNumber(data * azure),
       };
-      return false;
+      return; // exit loop if match found
     }
+    return true; // continue loop
   });
 
   return result;

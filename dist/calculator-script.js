@@ -612,6 +612,12 @@ let azure_sentinel_savings = 0; // C30
 const $totalCompute = document.getElementById("total_compute");
 const $totalStorage = document.getElementById("total_storage");
 const $anvilogicCost = document.getElementById("anvilogic_cost");
+const $splunkCost = document.getElementById("splunk_cost");
+const $splunkSavings = document.getElementById("splunk_savings");
+const $splunkCloudCost = document.getElementById("splunk_cloud_cost");
+const $splunkCloudSavings = document.getElementById("splunk_cloud_savings");
+const $azureSentinelCost = document.getElementById("azure_sentinel_cost");
+const $azureSentinelSavings = document.getElementById("azure_sentinel_savings");
 /**
  * ------------------------------------------
  * Calculations
@@ -624,16 +630,22 @@ const $anvilogicCost = document.getElementById("anvilogic_cost");
     customer_estimate = anvilogic_cost + anvilogic_profit; // =sum(B20+B21)
     const { splunk_val, splunk_cloud_val, azure_val } = (0, _lookups.get_compared_costs)(data_ingestion_per_day);
     splunk_cost = splunk_val;
-    splunk_savings = (0, _helpersFunctions.formattedNumber)(splunk_cost - customer_estimate);
+    splunk_savings = (splunk_cost - customer_estimate) / splunk_cost;
     splunk_cloud_cost = splunk_cloud_val;
-    splunk_cloud_savings = (0, _helpersFunctions.formattedNumber)(splunk_cloud_cost - customer_estimate);
+    splunk_cloud_savings = (splunk_cloud_cost - customer_estimate) / splunk_cloud_cost;
     azure_sentinel_cost = azure_val;
-    azure_sentinel_savings = (0, _helpersFunctions.formattedNumber)(azure_sentinel_cost - customer_estimate);
+    azure_sentinel_savings = (azure_sentinel_cost - customer_estimate) / azure_sentinel_cost;
     // update DOM elements
     if ($totalCompute && $totalStorage && $anvilogicCost) {
         $totalCompute.textContent = (0, _helpersFunctions.numberToPrice)(total_compute);
         $totalStorage.textContent = (0, _helpersFunctions.numberToPrice)(total_storage);
         $anvilogicCost.textContent = (0, _helpersFunctions.numberToPrice)(anvilogic_cost);
+        $splunkCost.textContent = (0, _helpersFunctions.numberToPrice)(splunk_cost);
+        $splunkSavings.textContent = (0, _helpersFunctions.getSavingsPercent)(splunk_savings);
+        $splunkCloudCost.textContent = (0, _helpersFunctions.numberToPrice)(splunk_cloud_cost);
+        $splunkCloudSavings.textContent = (0, _helpersFunctions.getSavingsPercent)(splunk_cloud_savings);
+        $azureSentinelCost.textContent = (0, _helpersFunctions.numberToPrice)(azure_sentinel_cost);
+        $azureSentinelSavings.textContent = (0, _helpersFunctions.getSavingsPercent)(azure_sentinel_savings);
     } else console.error("All necessary DOM elements not found");
     // console.log(data_ingestion_per_day, data_retention_in_days);
     console.log("---------------------------------------------------------");
@@ -642,6 +654,12 @@ const $anvilogicCost = document.getElementById("anvilogic_cost");
     console.log("Anvilogic cost: ", anvilogic_cost);
     console.log("Anvilogic profit: ", anvilogic_profit);
     console.log("Customer estimate: ", customer_estimate);
+    console.log("Splunk cost: ", splunk_cost);
+    console.log("Splunk savings: ", splunk_savings);
+    console.log("Splunk cloud cost: ", splunk_cloud_cost);
+    console.log("Splunk cloud savings: ", splunk_cloud_savings);
+    console.log("Azure Sentinel cost: ", azure_sentinel_cost);
+    console.log("Azure Sentinel savings: ", azure_sentinel_savings);
 }
 /**
  * ------------------------------------------
@@ -803,33 +821,17 @@ function get_compared_costs(data) {
         splunk_cloud_val: 0,
         azure_val: 0
     };
-    /*
-  =IF(
-    A5<Lookups!A27,A5*Lookups!B26,
-    IF(
-      A5<Lookups!A28,A5*Lookups!B27,
-      IF(
-        A5<Lookups!A29,A5*Lookups!B28,IF(
-          A5<Lookups!A30,A5*Lookups!B29,
-          IF(
-            A5<Lookups!A31,A5*Lookups!B30,
-            IF(
-              A5<Lookups!A32,A5*Lookups!B31,A5*Lookups!B32
-            )
-          )
-        )
-      )
-    )
-  )
-   */ COMPARED_COSTS.every(([gb_per_year, splunk, splunk_cloud, azure])=>{
+    /*formula = IF( A5<Lookups!A27,A5*Lookups!B26, IF( A5<Lookups!A28,A5*Lookups!B27, IF( A5<Lookups!A29,A5*Lookups!B28,IF( A5<Lookups!A30,A5*Lookups!B29, IF( A5<Lookups!A31,A5*Lookups!B30, IF( A5<Lookups!A32,A5*Lookups!B31,A5*Lookups!B32 ) ) ) ) ) )*/ COMPARED_COSTS.every(([gb_per_year, splunk, splunk_cloud, azure])=>{
+        console.log(data, gb_per_year, splunk, splunk_cloud, azure);
         if (data <= gb_per_year) {
             result = {
                 splunk_val: (0, _helpersFunctions.formattedNumber)(data * splunk),
                 splunk_cloud_val: (0, _helpersFunctions.formattedNumber)(data * splunk_cloud),
                 azure_val: (0, _helpersFunctions.formattedNumber)(data * azure)
             };
-            return false;
+            return; // exit loop if match found
         }
+        return true; // continue loop
     });
     return result;
 }
@@ -872,6 +874,10 @@ parcelHelpers.export(exports, "formattedNumber", ()=>formattedNumber);
  * return format: $91,980.00
  * @param value
  */ parcelHelpers.export(exports, "numberToPrice", ()=>numberToPrice);
+/**
+ * get savings %
+ * format: 71.43%
+ */ parcelHelpers.export(exports, "getSavingsPercent", ()=>getSavingsPercent);
 function formattedNumber(value) {
     return Math.ceil(value * 100) / 100;
 }
@@ -881,6 +887,9 @@ function numberToPrice(value) {
         style: "currency",
         currency: "USD"
     });
+}
+function getSavingsPercent(savings) {
+    return formattedNumber(savings * 100) + "%";
 }
 
 },{"@parcel/transformer-js/src/esmodule-helpers.js":"b3YDz"}]},["iUHqi","gYdTW"], "gYdTW", "parcelRequire88a3")

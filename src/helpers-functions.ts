@@ -13,3 +13,11 @@ export function numberToPrice(value: number): string {
     currency: "USD",
   });
 }
+
+/**
+ * get savings %
+ * format: 71.43%
+ */
+export function getSavingsPercent(savings: number): string {
+  return formattedNumber(savings * 100) + "%";
+}

@@ -1,4 +1,4 @@
-import { formattedNumber, numberToPrice } from "./helpers-functions";
+import { formattedNumber, getSavingsPercent, numberToPrice } from "./helpers-functions";
 import {
   COMPRESSION_RATE,
   get_compared_costs,
@@ -44,6 +44,12 @@ let azure_sentinel_savings = 0; // C30
 const $totalCompute = document.getElementById("total_compute") as HTMLSpanElement;
 const $totalStorage = document.getElementById("total_storage") as HTMLSpanElement;
 const $anvilogicCost = document.getElementById("anvilogic_cost") as HTMLSpanElement;
+const $splunkCost = document.getElementById("splunk_cost") as HTMLSpanElement;
+const $splunkSavings = document.getElementById("splunk_savings") as HTMLSpanElement;
+const $splunkCloudCost = document.getElementById("splunk_cloud_cost") as HTMLSpanElement;
+const $splunkCloudSavings = document.getElementById("splunk_cloud_savings") as HTMLSpanElement;
+const $azureSentinelCost = document.getElementById("azure_sentinel_cost") as HTMLSpanElement;
+const $azureSentinelSavings = document.getElementById("azure_sentinel_savings") as HTMLSpanElement;
 
 /**
  * ------------------------------------------
@@ -59,17 +65,23 @@ function calculate_totals() {
 
   const { splunk_val, splunk_cloud_val, azure_val } = get_compared_costs(data_ingestion_per_day);
   splunk_cost = splunk_val;
-  splunk_savings = formattedNumber(splunk_cost - customer_estimate);
+  splunk_savings = (splunk_cost - customer_estimate) / splunk_cost;
   splunk_cloud_cost = splunk_cloud_val;
-  splunk_cloud_savings = formattedNumber(splunk_cloud_cost - customer_estimate);
+  splunk_cloud_savings = (splunk_cloud_cost - customer_estimate) / splunk_cloud_cost;
   azure_sentinel_cost = azure_val;
-  azure_sentinel_savings = formattedNumber(azure_sentinel_cost - customer_estimate);
+  azure_sentinel_savings = (azure_sentinel_cost - customer_estimate) / azure_sentinel_cost;
 
   // update DOM elements
   if ($totalCompute && $totalStorage && $anvilogicCost) {
     $totalCompute.textContent = numberToPrice(total_compute);
     $totalStorage.textContent = numberToPrice(total_storage);
     $anvilogicCost.textContent = numberToPrice(anvilogic_cost);
+    $splunkCost.textContent = numberToPrice(splunk_cost);
+    $splunkSavings.textContent = getSavingsPercent(splunk_savings);
+    $splunkCloudCost.textContent = numberToPrice(splunk_cloud_cost);
+    $splunkCloudSavings.textContent = getSavingsPercent(splunk_cloud_savings);
+    $azureSentinelCost.textContent = numberToPrice(azure_sentinel_cost);
+    $azureSentinelSavings.textContent = getSavingsPercent(azure_sentinel_savings);
   } else {
     console.error("All necessary DOM elements not found");
   }
@@ -81,6 +93,13 @@ function calculate_totals() {
   console.log("Anvilogic cost: ", anvilogic_cost);
   console.log("Anvilogic profit: ", anvilogic_profit);
   console.log("Customer estimate: ", customer_estimate);
+
+  console.log("Splunk cost: ", splunk_cost);
+  console.log("Splunk savings: ", splunk_savings);
+  console.log("Splunk cloud cost: ", splunk_cloud_cost);
+  console.log("Splunk cloud savings: ", splunk_cloud_savings);
+  console.log("Azure Sentinel cost: ", azure_sentinel_cost);
+  console.log("Azure Sentinel savings: ", azure_sentinel_savings);
 }
 
 /**
