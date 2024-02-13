@@ -581,7 +581,7 @@ function hmrAccept(bundle /*: ParcelRequire */ , id /*: string */ ) {
 },{}],"gYdTW":[function(require,module,exports) {
 var _helpersFunctions = require("./helpers-functions");
 var _lookups = require("./lookups");
-console.log("Calculator script loaded ");
+console.log("Calculator script loaded 1.0.0");
 /**
  * fixed values based on notion doc instructions
  * comment includes the cell reference from Google sheet
@@ -688,9 +688,66 @@ dataRetentionDaysInput.addEventListener("input", handleInputChange);
     calculate_totals();
 }); // --- END onload ---
 
-},{"./lookups":"6U6f9","./helpers-functions":"IAx4b"}],"6U6f9":[function(require,module,exports) {
+},{"./helpers-functions":"IAx4b","./lookups":"6U6f9"}],"IAx4b":[function(require,module,exports) {
 var parcelHelpers = require("@parcel/transformer-js/src/esmodule-helpers.js");
 parcelHelpers.defineInteropFlag(exports);
+parcelHelpers.export(exports, "formattedNumber", ()=>formattedNumber);
+parcelHelpers.export(exports, "numberToPrice", ()=>numberToPrice);
+parcelHelpers.export(exports, "getSavingsPercent", ()=>getSavingsPercent);
+function formattedNumber(value) {
+    return Math.ceil(value * 100) / 100;
+}
+/**
+ * return format: $91,980.00
+ * @param value
+ */ function numberToPrice(value) {
+    let num = formattedNumber(value);
+    return num.toLocaleString("en-US", {
+        style: "currency",
+        currency: "USD"
+    });
+}
+/**
+ * get savings %
+ * format: 71.43%
+ */ function getSavingsPercent(savings) {
+    return (savings * 100).toFixed(2) + "%";
+}
+
+},{"@parcel/transformer-js/src/esmodule-helpers.js":"b3YDz"}],"b3YDz":[function(require,module,exports) {
+exports.interopDefault = function(a) {
+    return a && a.__esModule ? a : {
+        default: a
+    };
+};
+exports.defineInteropFlag = function(a) {
+    Object.defineProperty(a, "__esModule", {
+        value: true
+    });
+};
+exports.exportAll = function(source, dest) {
+    Object.keys(source).forEach(function(key) {
+        if (key === "default" || key === "__esModule" || Object.prototype.hasOwnProperty.call(dest, key)) return;
+        Object.defineProperty(dest, key, {
+            enumerable: true,
+            get: function() {
+                return source[key];
+            }
+        });
+    });
+    return dest;
+};
+exports.export = function(dest, destName, get) {
+    Object.defineProperty(dest, destName, {
+        enumerable: true,
+        get: get
+    });
+};
+
+},{}],"6U6f9":[function(require,module,exports) {
+var parcelHelpers = require("@parcel/transformer-js/src/esmodule-helpers.js");
+parcelHelpers.defineInteropFlag(exports);
+// exports
 parcelHelpers.export(exports, "COMPRESSION_RATE", ()=>COMPRESSION_RATE);
 parcelHelpers.export(exports, "MANAGED_COST", ()=>MANAGED_COST);
 parcelHelpers.export(exports, "STORAGE_COST", ()=>STORAGE_COST);
@@ -821,9 +878,12 @@ function get_compared_costs(data) {
         splunk_cloud_val: 0,
         azure_val: 0
     };
-    /*formula = IF( A5<Lookups!A27,A5*Lookups!B26, IF( A5<Lookups!A28,A5*Lookups!B27, IF( A5<Lookups!A29,A5*Lookups!B28,IF( A5<Lookups!A30,A5*Lookups!B29, IF( A5<Lookups!A31,A5*Lookups!B30, IF( A5<Lookups!A32,A5*Lookups!B31,A5*Lookups!B32 ) ) ) ) ) )*/ COMPARED_COSTS.every(([gb_per_year, splunk, splunk_cloud, azure])=>{
-        console.log(data, gb_per_year, splunk, splunk_cloud, azure);
-        if (data <= gb_per_year) {
+    /*formula = IF( A5<Lookups!A27,A5*Lookups!B26, IF( A5<Lookups!A28,A5*Lookups!B27, IF( A5<Lookups!A29,A5*Lookups!B28,IF( A5<Lookups!A30,A5*Lookups!B29, IF( A5<Lookups!A31,A5*Lookups!B30, IF( A5<Lookups!A32,A5*Lookups!B31,A5*Lookups!B32 ) ) ) ) ) )*/ COMPARED_COSTS.every(([gb_per_year], i)=>{
+        console.log(data, gb_per_year);
+        console.log(typeof data, typeof gb_per_year);
+        if (i !== 0 && data < gb_per_year) {
+            // get previous cost line item
+            const [_, splunk, splunk_cloud, azure] = COMPARED_COSTS[i - 1];
             result = {
                 splunk_val: (0, _helpersFunctions.formattedNumber)(data * splunk),
                 splunk_cloud_val: (0, _helpersFunctions.formattedNumber)(data * splunk_cloud),
@@ -836,62 +896,6 @@ function get_compared_costs(data) {
     return result;
 }
 
-},{"@parcel/transformer-js/src/esmodule-helpers.js":"b3YDz","./helpers-functions":"IAx4b"}],"b3YDz":[function(require,module,exports) {
-exports.interopDefault = function(a) {
-    return a && a.__esModule ? a : {
-        default: a
-    };
-};
-exports.defineInteropFlag = function(a) {
-    Object.defineProperty(a, "__esModule", {
-        value: true
-    });
-};
-exports.exportAll = function(source, dest) {
-    Object.keys(source).forEach(function(key) {
-        if (key === "default" || key === "__esModule" || Object.prototype.hasOwnProperty.call(dest, key)) return;
-        Object.defineProperty(dest, key, {
-            enumerable: true,
-            get: function() {
-                return source[key];
-            }
-        });
-    });
-    return dest;
-};
-exports.export = function(dest, destName, get) {
-    Object.defineProperty(dest, destName, {
-        enumerable: true,
-        get: get
-    });
-};
-
-},{}],"IAx4b":[function(require,module,exports) {
-var parcelHelpers = require("@parcel/transformer-js/src/esmodule-helpers.js");
-parcelHelpers.defineInteropFlag(exports);
-parcelHelpers.export(exports, "formattedNumber", ()=>formattedNumber);
-/**
- * return format: $91,980.00
- * @param value
- */ parcelHelpers.export(exports, "numberToPrice", ()=>numberToPrice);
-/**
- * get savings %
- * format: 71.43%
- */ parcelHelpers.export(exports, "getSavingsPercent", ()=>getSavingsPercent);
-function formattedNumber(value) {
-    return Math.ceil(value * 100) / 100;
-}
-function numberToPrice(value) {
-    let num = formattedNumber(value);
-    return num.toLocaleString("en-US", {
-        style: "currency",
-        currency: "USD"
-    });
-}
-function getSavingsPercent(savings) {
-    return formattedNumber(savings * 100) + "%";
-}
-
-},{"@parcel/transformer-js/src/esmodule-helpers.js":"b3YDz"}]},["iUHqi","gYdTW"], "gYdTW", "parcelRequire88a3")
+},{"./helpers-functions":"IAx4b","@parcel/transformer-js/src/esmodule-helpers.js":"b3YDz"}]},["iUHqi","gYdTW"], "gYdTW", "parcelRequire88a3")
 
 //# sourceMappingURL=calculator-script.js.map

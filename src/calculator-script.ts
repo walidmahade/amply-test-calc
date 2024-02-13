@@ -7,7 +7,7 @@ import {
   get_warehouse_data,
 } from "./lookups";
 
-console.log("Calculator script loaded ");
+console.log("Calculator script loaded 1.0.0");
 
 /**
  * fixed values based on notion doc instructions

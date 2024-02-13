@@ -103,6 +103,7 @@ const COMPARED_COSTS = [
   [25600, 244.14, 341.8, 510], // A31, B31, C31, D31
   [51200, 195.31, 195.31, 470], // A32, B32, C32, D32
 ];
+
 function get_compared_costs(data: number) {
   let result = {
     splunk_val: 0,
@@ -111,9 +112,13 @@ function get_compared_costs(data: number) {
   };
 
   /*formula = IF( A5<Lookups!A27,A5*Lookups!B26, IF( A5<Lookups!A28,A5*Lookups!B27, IF( A5<Lookups!A29,A5*Lookups!B28,IF( A5<Lookups!A30,A5*Lookups!B29, IF( A5<Lookups!A31,A5*Lookups!B30, IF( A5<Lookups!A32,A5*Lookups!B31,A5*Lookups!B32 ) ) ) ) ) )*/
-  COMPARED_COSTS.every(([gb_per_year, splunk, splunk_cloud, azure]) => {
-    console.log(data, gb_per_year, splunk, splunk_cloud, azure);
-    if (data <= gb_per_year) {
+  COMPARED_COSTS.every(([gb_per_year], i) => {
+    console.log(data, gb_per_year);
+    console.log(typeof data, typeof gb_per_year);
+
+    if (i !== 0 && data < gb_per_year) {
+      // get previous cost line item
+      const [_, splunk, splunk_cloud, azure] = COMPARED_COSTS[i - 1];
       result = {
         splunk_val: formattedNumber(data * splunk),
         splunk_cloud_val: formattedNumber(data * splunk_cloud),
@@ -127,6 +132,7 @@ function get_compared_costs(data: number) {
   return result;
 }
 
+// exports
 export {
   COMPRESSION_RATE,
   MANAGED_COST,

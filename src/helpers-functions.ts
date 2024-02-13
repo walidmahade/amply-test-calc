@@ -1,4 +1,4 @@
-export function formattedNumber(value: number): number {
+function formattedNumber(value: number): number {
   return Math.ceil(value * 100) / 100;
 }
 
@@ -6,7 +6,7 @@ export function formattedNumber(value: number): number {
  * return format: $91,980.00
  * @param value
  */
-export function numberToPrice(value: number): string {
+function numberToPrice(value: number): string {
   let num = formattedNumber(value);
   return num.toLocaleString("en-US", {
     style: "currency",
@@ -18,6 +18,8 @@ export function numberToPrice(value: number): string {
  * get savings %
  * format: 71.43%
  */
-export function getSavingsPercent(savings: number): string {
-  return formattedNumber(savings * 100) + "%";
+function getSavingsPercent(savings: number): string {
+  return (savings * 100).toFixed(2) + "%";
 }
+
+export { formattedNumber, numberToPrice, getSavingsPercent };

@@ -4,7 +4,7 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "dev": "parcel src/calculator-script.ts --hmr-port 50619"
+    "dev": "parcel src/calculator-script.ts --hmr-port=50619"
   },
   "keywords": [],
   "author": "",
