@@ -27,16 +27,24 @@ let anvilogic_cost = 0; // B20
 let anvilogic_profit = 0; // B21
 let customer_estimate = 0; // B23
 
+// DOM elements
+const $totalCompute = document.getElementById("total_compute") as HTMLSpanElement;
+const $totalStorage = document.getElementById("total_storage") as HTMLSpanElement;
+const $anvilogicCost = document.getElementById("anvilogic_cost") as HTMLSpanElement;
+
 /**
  * ------------------------------------------
  * Calculations
  */
 function calculate_totals() {
+  // recalculate the values
   total_compute = formattedNumber(credit_price * (warehouse_credits_per_year + data_credits_per_year));
   total_storage = get_total_storage(hosted_region, storage_size_on_disk_TB);
   anvilogic_cost = formattedNumber(total_compute + total_storage); // =sum(B18+B19)
   anvilogic_profit = formattedNumber(managed_instance ? total_compute * margin : 0); // =IF(B6=FALSE(), 0, B18*B22)
   customer_estimate = anvilogic_cost + anvilogic_profit; // =sum(B20+B21)
+
+  // update DOM elements
 
   // console.log(data_ingestion_per_day, data_retention_in_days);
   console.log("---------------------------------------------------------");
