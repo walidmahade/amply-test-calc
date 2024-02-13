@@ -1,3 +1,5 @@
+import { formattedNumber } from "./helpers-functions";
+
 const COMPRESSION_RATE = 0.9; // B17
 const MANAGED_COST = 0.3; // B19
 
@@ -69,9 +71,13 @@ function get_warehouse_data(data_ingestion_per_day: number): [string, number] {
   return [size, WAREHOUSE_SIZE[size]];
 }
 
+/**
+ * --------------------------------------
+ * total storage calculation
+ * location is fixed to "us" -> ("us-east") for now ( according to notion doc)
+ * =IF(B16="US", IF(A13*Lookups!E15*12 < 24, "24", A13*Lookups!E15*12)/1,IF(B16="EU", IF(A13*Lookups!E16*12 < 24.5, "24.5", A13*Lookups!E16*12)/1, IF(B16="AP", IF(A13*Lookups!E17*12 < 24.5, "24.5", A13*Lookups!E17*12)/1)))
+ */
 function get_total_storage(hosted_region: string, storage_size_on_disk_TB: number): number {
-  // location is fixed to "us" -> ("us-east") for now ( according to notion doc)
-  // =IF(B16="US", IF(A13*Lookups!E15*12 < 24, "24", A13*Lookups!E15*12)/1,IF(B16="EU", IF(A13*Lookups!E16*12 < 24.5, "24.5", A13*Lookups!E16*12)/1, IF(B16="AP", IF(A13*Lookups!E17*12 < 24.5, "24.5", A13*Lookups!E17*12)/1)))
   if (hosted_region === "us") {
     // IF(A13*Lookups!E15*12 < 24, "24", A13*Lookups!E15*12)/1
     const result =
@@ -83,6 +89,59 @@ function get_total_storage(hosted_region: string, storage_size_on_disk_TB: numbe
   }
 }
 
+/**
+ * --------------------------------------
+ * calculate compared costs
+ */
+// [GB/Year: A25, Splunk: B25, Splunk Cloud: C25, Azure Sentinel: D25
+const COMPARED_COSTS = [
+  [100, 600, 800, 715.4], // A26, B26, C26, D26
+  [500, 500, 710, 631.45], // A27, B27, C27, D27
+  [1024, 390.63, 683.59, 620.5], // A28, B28, C28, D28
+  [5120, 366.21, 488.28, 587.65], // A29, B29, C29, D29
+  [10240, 292.97, 390.63, 550], // A30, B30, C30, D30
+  [25600, 244.14, 341.8, 510], // A31, B31, C31, D31
+  [51200, 195.31, 195.31, 470], // A32, B32, C32, D32
+];
+function get_compared_costs(data: number) {
+  let result = {
+    splunk_val: 0,
+    splunk_cloud_val: 0,
+    azure_val: 0,
+  };
+  /*
+  =IF(
+    A5<Lookups!A27,A5*Lookups!B26,
+    IF(
+      A5<Lookups!A28,A5*Lookups!B27,
+      IF(
+        A5<Lookups!A29,A5*Lookups!B28,IF(
+          A5<Lookups!A30,A5*Lookups!B29,
+          IF(
+            A5<Lookups!A31,A5*Lookups!B30,
+            IF(
+              A5<Lookups!A32,A5*Lookups!B31,A5*Lookups!B32
+            )
+          )
+        )
+      )
+    )
+  )
+   */
+  COMPARED_COSTS.every(([gb_per_year, splunk, splunk_cloud, azure]) => {
+    if (data <= gb_per_year) {
+      result = {
+        splunk_val: formattedNumber(data * splunk),
+        splunk_cloud_val: formattedNumber(data * splunk_cloud),
+        azure_val: formattedNumber(data * azure),
+      };
+      return false;
+    }
+  });
+
+  return result;
+}
+
 export {
   COMPRESSION_RATE,
   MANAGED_COST,
@@ -92,4 +151,5 @@ export {
   get_credits_per_year,
   get_warehouse_data,
   get_total_storage,
+  get_compared_costs,
 };

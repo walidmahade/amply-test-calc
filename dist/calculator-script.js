@@ -602,6 +602,12 @@ let total_storage = 0; // B19
 let anvilogic_cost = 0; // B20
 let anvilogic_profit = 0; // B21
 let customer_estimate = 0; // B23
+let splunk_cost = 0; // B28
+let splunk_savings = 0; // C28
+let splunk_cloud_cost = 0; // B29
+let splunk_cloud_savings = 0; // C29
+let azure_sentinel_cost = 0; // B30
+let azure_sentinel_savings = 0; // C30
 // DOM elements
 const $totalCompute = document.getElementById("total_compute");
 const $totalStorage = document.getElementById("total_storage");
@@ -616,6 +622,13 @@ const $anvilogicCost = document.getElementById("anvilogic_cost");
     anvilogic_cost = (0, _helpersFunctions.formattedNumber)(total_compute + total_storage); // =sum(B18+B19)
     anvilogic_profit = (0, _helpersFunctions.formattedNumber)(managed_instance ? total_compute * margin : 0); // =IF(B6=FALSE(), 0, B18*B22)
     customer_estimate = anvilogic_cost + anvilogic_profit; // =sum(B20+B21)
+    const { splunk_val, splunk_cloud_val, azure_val } = (0, _lookups.get_compared_costs)(data_ingestion_per_day);
+    splunk_cost = splunk_val;
+    splunk_savings = (0, _helpersFunctions.formattedNumber)(splunk_cost - customer_estimate);
+    splunk_cloud_cost = splunk_cloud_val;
+    splunk_cloud_savings = (0, _helpersFunctions.formattedNumber)(splunk_cloud_cost - customer_estimate);
+    azure_sentinel_cost = azure_val;
+    azure_sentinel_savings = (0, _helpersFunctions.formattedNumber)(azure_sentinel_cost - customer_estimate);
     // update DOM elements
     if ($totalCompute && $totalStorage && $anvilogicCost) {
         $totalCompute.textContent = (0, _helpersFunctions.numberToPrice)(total_compute);
@@ -668,6 +681,8 @@ parcelHelpers.export(exports, "DATA_LOAD_SERVICE", ()=>DATA_LOAD_SERVICE);
 parcelHelpers.export(exports, "get_credits_per_year", ()=>get_credits_per_year);
 parcelHelpers.export(exports, "get_warehouse_data", ()=>get_warehouse_data);
 parcelHelpers.export(exports, "get_total_storage", ()=>get_total_storage);
+parcelHelpers.export(exports, "get_compared_costs", ()=>get_compared_costs);
+var _helpersFunctions = require("./helpers-functions");
 const COMPRESSION_RATE = 0.9; // B17
 const MANAGED_COST = 0.3; // B19
 // Storage Loc	Cost / TB
@@ -722,17 +737,104 @@ function get_warehouse_data(data_ingestion_per_day) {
         WAREHOUSE_SIZE[size]
     ];
 }
-function get_total_storage(hosted_region, storage_size_on_disk_TB) {
-    // location is fixed to "us" -> ("us-east") for now ( according to notion doc)
-    // =IF(B16="US", IF(A13*Lookups!E15*12 < 24, "24", A13*Lookups!E15*12)/1,IF(B16="EU", IF(A13*Lookups!E16*12 < 24.5, "24.5", A13*Lookups!E16*12)/1, IF(B16="AP", IF(A13*Lookups!E17*12 < 24.5, "24.5", A13*Lookups!E17*12)/1)))
+/**
+ * --------------------------------------
+ * total storage calculation
+ * location is fixed to "us" -> ("us-east") for now ( according to notion doc)
+ * =IF(B16="US", IF(A13*Lookups!E15*12 < 24, "24", A13*Lookups!E15*12)/1,IF(B16="EU", IF(A13*Lookups!E16*12 < 24.5, "24.5", A13*Lookups!E16*12)/1, IF(B16="AP", IF(A13*Lookups!E17*12 < 24.5, "24.5", A13*Lookups!E17*12)/1)))
+ */ function get_total_storage(hosted_region, storage_size_on_disk_TB) {
     if (hosted_region === "us") {
         // IF(A13*Lookups!E15*12 < 24, "24", A13*Lookups!E15*12)/1
         const result = storage_size_on_disk_TB * STORAGE_COST["us-east"] * 12 < 24 ? 24 : storage_size_on_disk_TB * STORAGE_COST["us-east"] * 12;
         return Math.ceil(result * 100) / 100;
     }
 }
+/**
+ * --------------------------------------
+ * calculate compared costs
+ */ // [GB/Year: A25, Splunk: B25, Splunk Cloud: C25, Azure Sentinel: D25
+const COMPARED_COSTS = [
+    [
+        100,
+        600,
+        800,
+        715.4
+    ],
+    [
+        500,
+        500,
+        710,
+        631.45
+    ],
+    [
+        1024,
+        390.63,
+        683.59,
+        620.5
+    ],
+    [
+        5120,
+        366.21,
+        488.28,
+        587.65
+    ],
+    [
+        10240,
+        292.97,
+        390.63,
+        550
+    ],
+    [
+        25600,
+        244.14,
+        341.8,
+        510
+    ],
+    [
+        51200,
+        195.31,
+        195.31,
+        470
+    ]
+];
+function get_compared_costs(data) {
+    let result = {
+        splunk_val: 0,
+        splunk_cloud_val: 0,
+        azure_val: 0
+    };
+    /*
+  =IF(
+    A5<Lookups!A27,A5*Lookups!B26,
+    IF(
+      A5<Lookups!A28,A5*Lookups!B27,
+      IF(
+        A5<Lookups!A29,A5*Lookups!B28,IF(
+          A5<Lookups!A30,A5*Lookups!B29,
+          IF(
+            A5<Lookups!A31,A5*Lookups!B30,
+            IF(
+              A5<Lookups!A32,A5*Lookups!B31,A5*Lookups!B32
+            )
+          )
+        )
+      )
+    )
+  )
+   */ COMPARED_COSTS.every(([gb_per_year, splunk, splunk_cloud, azure])=>{
+        if (data <= gb_per_year) {
+            result = {
+                splunk_val: (0, _helpersFunctions.formattedNumber)(data * splunk),
+                splunk_cloud_val: (0, _helpersFunctions.formattedNumber)(data * splunk_cloud),
+                azure_val: (0, _helpersFunctions.formattedNumber)(data * azure)
+            };
+            return false;
+        }
+    });
+    return result;
+}
 
-},{"@parcel/transformer-js/src/esmodule-helpers.js":"b3YDz"}],"b3YDz":[function(require,module,exports) {
+},{"@parcel/transformer-js/src/esmodule-helpers.js":"b3YDz","./helpers-functions":"IAx4b"}],"b3YDz":[function(require,module,exports) {
 exports.interopDefault = function(a) {
     return a && a.__esModule ? a : {
         default: a
@@ -766,13 +868,16 @@ exports.export = function(dest, destName, get) {
 var parcelHelpers = require("@parcel/transformer-js/src/esmodule-helpers.js");
 parcelHelpers.defineInteropFlag(exports);
 parcelHelpers.export(exports, "formattedNumber", ()=>formattedNumber);
-parcelHelpers.export(exports, "numberToPrice", ()=>numberToPrice);
+/**
+ * return format: $91,980.00
+ * @param value
+ */ parcelHelpers.export(exports, "numberToPrice", ()=>numberToPrice);
 function formattedNumber(value) {
     return Math.ceil(value * 100) / 100;
 }
 function numberToPrice(value) {
-    // format: $91,980.00
-    return value.toLocaleString("en-US", {
+    let num = formattedNumber(value);
+    return num.toLocaleString("en-US", {
         style: "currency",
         currency: "USD"
     });

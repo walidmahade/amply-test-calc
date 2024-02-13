@@ -1,5 +1,11 @@
 import { formattedNumber, numberToPrice } from "./helpers-functions";
-import { COMPRESSION_RATE, get_credits_per_year, get_total_storage, get_warehouse_data } from "./lookups";
+import {
+  COMPRESSION_RATE,
+  get_compared_costs,
+  get_credits_per_year,
+  get_total_storage,
+  get_warehouse_data,
+} from "./lookups";
 
 console.log("Calculator script loaded ");
 
@@ -27,6 +33,13 @@ let anvilogic_cost = 0; // B20
 let anvilogic_profit = 0; // B21
 let customer_estimate = 0; // B23
 
+let splunk_cost = 0; // B28
+let splunk_savings = 0; // C28
+let splunk_cloud_cost = 0; // B29
+let splunk_cloud_savings = 0; // C29
+let azure_sentinel_cost = 0; // B30
+let azure_sentinel_savings = 0; // C30
+
 // DOM elements
 const $totalCompute = document.getElementById("total_compute") as HTMLSpanElement;
 const $totalStorage = document.getElementById("total_storage") as HTMLSpanElement;
@@ -43,6 +56,14 @@ function calculate_totals() {
   anvilogic_cost = formattedNumber(total_compute + total_storage); // =sum(B18+B19)
   anvilogic_profit = formattedNumber(managed_instance ? total_compute * margin : 0); // =IF(B6=FALSE(), 0, B18*B22)
   customer_estimate = anvilogic_cost + anvilogic_profit; // =sum(B20+B21)
+
+  const { splunk_val, splunk_cloud_val, azure_val } = get_compared_costs(data_ingestion_per_day);
+  splunk_cost = splunk_val;
+  splunk_savings = formattedNumber(splunk_cost - customer_estimate);
+  splunk_cloud_cost = splunk_cloud_val;
+  splunk_cloud_savings = formattedNumber(splunk_cloud_cost - customer_estimate);
+  azure_sentinel_cost = azure_val;
+  azure_sentinel_savings = formattedNumber(azure_sentinel_cost - customer_estimate);
 
   // update DOM elements
   if ($totalCompute && $totalStorage && $anvilogicCost) {
